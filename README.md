@@ -1,2 +1,2 @@
 # CppServer
-This is a Server based on Linux, which built with CMake
+This is a Server based on Linux, which build with CMake
