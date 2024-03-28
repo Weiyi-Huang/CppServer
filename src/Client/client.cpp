@@ -1,38 +1,31 @@
 #include <cstdio>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <cstring>
 #include <unistd.h>
 #include "util.h"
+#include "Socket.h"
+#include "InetAddress.h"
 
 #define BUFFER_SIZE 1024
 
 int main()
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    ErrorIf(sockfd == -1, "Socket create error!");
-
-    sockaddr_in serv_addr;
-    bzero(&serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    serv_addr.sin_port = htons(8888);
-
-    ErrorIf(connect(sockfd, (sockaddr*)&serv_addr, sizeof(serv_addr)) == -1, "Socket connect error!");
+    Socket *clnt_sock = new Socket();
+    InetAddress *clnt_addr = new InetAddress("127.0.0.1", 8888);
+    clnt_sock->Connect(clnt_addr);
 
     while (true)
     {
         char buf[BUFFER_SIZE];
         bzero(&buf, sizeof(buf));
         scanf("%s", buf);
-        ssize_t write_bytes = write(sockfd, buf, sizeof(buf));
+        ssize_t write_bytes = write(clnt_sock->GetFd(), buf, sizeof(buf));
         if (write_bytes == -1)
         {
             printf("Socket already disconnect, can't write any more!\n");
             break;
         }
         bzero(&buf, sizeof(buf));
-        ssize_t read_bytes = read(sockfd, buf, sizeof(buf));
+        ssize_t read_bytes = read(clnt_sock->GetFd(), buf, sizeof(buf));
         if (read_bytes > 0)
         {
             printf("Message from server: %s\n", buf);
@@ -44,10 +37,11 @@ int main()
         }
         else if (read_bytes == -1)
         {
-            close(sockfd);
+            close(clnt_sock->GetFd());
             ErrorIf(true, "Socket read error!");
         }
     }
-    close(sockfd);
+    delete clnt_sock;
+    delete clnt_addr;
     return 0;
 }

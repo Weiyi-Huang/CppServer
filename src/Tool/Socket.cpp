@@ -40,6 +40,11 @@ void Socket::SetNonBlocking()
     fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL) | O_NONBLOCK);
 }
 
+void Socket::Connect(InetAddress *addr)
+{
+    ErrorIf(::connect(m_fd, (sockaddr*)&addr->m_addr, addr->m_addr_len) == -1, "Socket connect error!");
+}
+
 int Socket::Accept(InetAddress *addr)
 {
     int clnt_sockfd = ::accept(m_fd, (sockaddr*)&addr->m_addr, &addr->m_addr_len);

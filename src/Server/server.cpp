@@ -5,6 +5,7 @@
 #include "Socket.h"
 #include "InetAddress.h"
 #include "Epoll.h"
+#include "Channel.h"
 
 #define READ_BUFFER 1024
 
@@ -19,16 +20,22 @@ int main()
 
     Epoll *ep = new Epoll();
     serv_sock->SetNonBlocking();
-    ep->AddFd(serv_sock->GetFd(), EPOLLIN | EPOLLET);
+    //ep->AddFd(serv_sock->GetFd(), EPOLLIN | EPOLLET);
+    Channel *servChannel = new Channel(ep, serv_sock->GetFd());
+    servChannel->EnableReading();
 
     while (true)
     {
-        std::vector<epoll_event> events = ep->Poll();
-        int nfds = events.size();
+        //std::vector<epoll_event> events = ep->Poll();
+        //int nfds = events.size();
+        std::vector<Channel*> activeChannels = ep->Poll();
+        int nfds = activeChannels.size();
         for (int i = 0; i < nfds; ++i)
         {
+            int chfd = activeChannels[i]->GetFd();
             // New client connect
-            if (events[i].data.fd == serv_sock->GetFd())
+            //if (events[i].data.fd == serv_sock->GetFd())
+            if (chfd == serv_sock->GetFd())
             {
                 InetAddress *clnt_addr = new InetAddress();
                 Socket *clnt_sock = new Socket(serv_sock->Accept(clnt_addr));
@@ -36,12 +43,15 @@ int main()
                 printf("New client fd %d! IP: %s Port: %d\n", clnt_sock->GetFd(), inet_ntoa(clnt_addr->m_addr.sin_addr), ntohs(clnt_addr->m_addr.sin_port));
 
                 clnt_sock->SetNonBlocking();
-                ep->AddFd(clnt_sock->GetFd(), EPOLLIN | EPOLLET);
+                //ep->AddFd(clnt_sock->GetFd(), EPOLLIN | EPOLLET);
+                Channel *clntChannel = new Channel(ep, clnt_sock->GetFd());
+                clntChannel->EnableReading();
             }
             // Read event
-            else if (events[i].events & EPOLLIN)
+            //else if (events[i].events & EPOLLIN)
+            else if (activeChannels[i]->GetRevents() & EPOLLIN)
             {
-                HandleReadEvent(events[i].data.fd);
+                HandleReadEvent(chfd);
             }
             else
             {

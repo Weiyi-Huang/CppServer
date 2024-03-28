@@ -11,7 +11,8 @@ public:
     void Bind(InetAddress *addr);
     void Listen();
     void SetNonBlocking();
-
+    
+    void Connect(InetAddress *addr);
     int Accept(InetAddress *addr);
 
     int GetFd();
