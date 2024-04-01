@@ -2,6 +2,7 @@
 #include "Socket.h"
 #include "InetAddress.h"
 #include "Channel.h"
+#include "Acceptor.h"
 #include <functional>
 #include <cstring>
 #include <unistd.h>
@@ -10,20 +11,14 @@
 
 Server::Server(EventLoop *loop) : m_loop(loop)
 {
-    Socket *serv_sock = new Socket();
-    InetAddress *serv_addr = new InetAddress("127.0.0.1", 8888);
-    serv_sock->Bind(serv_addr);
-    serv_sock->Listen();
-    serv_sock->SetNonBlocking();
-
-    Channel *servChannel = new Channel(m_loop, serv_sock->GetFd());
-    std::function<void()> cb = std::bind(&Server::NewConnection, this, serv_sock);
-    servChannel->SetCallback(cb);
-    servChannel->EnableReading();
+    m_acceptor = new Acceptor(loop);
+    std::function<void(Socket*)> cb = std::bind(&Server::NewConnection, this, std::placeholders::_1);
+    m_acceptor->SetNewConnectionCallback(cb);
 }
 
 Server::~Server()
 {
+    delete m_acceptor;
 }
 
 void Server::NewConnection(Socket *serv_sock)
