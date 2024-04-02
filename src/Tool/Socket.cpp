@@ -49,7 +49,6 @@ void Socket::Connect(InetAddress *addr)
     sockaddr_in addr_in = addr->GetAddr();
     socklen_t addr_len = addr->GetAddrLen();
     ErrorIf(::connect(m_fd, (sockaddr*)&addr_in, addr_len) == -1, "Socket connect error!");
-    addr->SetInetAddr(addr_in, addr_len);
 }
 
 int Socket::Accept(InetAddress *addr)

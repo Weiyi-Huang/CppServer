@@ -4,8 +4,6 @@
 #include "Connection.h"
 #include <functional>
 
-#define READ_BUFFER 1024
-
 Server::Server(EventLoop *loop) : m_loop(loop)
 {
     m_acceptor = new Acceptor(loop);
