@@ -5,6 +5,7 @@
 #include "Buffer.h"
 #include <unistd.h>
 #include <cstring>
+#include <iostream>
 
 Connection::Connection(EventLoop *loop, Socket *sock) : m_loop(loop), m_sock(sock), m_channel(nullptr),
 m_inBuffer(new std::string()), m_readBuffer(nullptr)

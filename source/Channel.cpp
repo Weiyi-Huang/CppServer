@@ -17,7 +17,7 @@ Channel::~Channel()
 
 void Channel::HandEvent()
 {
-    m_callback();
+    m_loop->AddThread(m_callback);
 }
 
 void Channel::EnableReading()

@@ -2,6 +2,7 @@
 #include "Socket.h"
 #include "InetAddress.h"
 #include "Channel.h"
+#include <cstdio>
 
 Acceptor::Acceptor(EventLoop *loop) : m_loop(loop), m_sock(nullptr), m_acceptChannel(nullptr)
 {
