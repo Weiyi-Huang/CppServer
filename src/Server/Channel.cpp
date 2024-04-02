@@ -1,5 +1,6 @@
 #include "Channel.h"
 #include "EventLoop.h"
+#include <unistd.h>
 
 Channel::Channel(EventLoop *loop, int fd) : m_loop(loop), m_fd(fd), m_events(0), m_revents(0), m_inEpoll(false)
 {
@@ -7,6 +8,11 @@ Channel::Channel(EventLoop *loop, int fd) : m_loop(loop), m_fd(fd), m_events(0),
 
 Channel::~Channel()
 {
+    if (m_fd != -1)
+    {
+        close(m_fd);
+        m_fd = -1;
+    }
 }
 
 void Channel::HandEvent()
