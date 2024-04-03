@@ -14,11 +14,11 @@ void Test()
 
 int main()
 {
-    ThreadPool *poll = new ThreadPool();
+    ThreadPool *pool = new ThreadPool();
     std::function<void()> func = std::bind(Print, 1, 3.14, "hello", std::string("world"));
-    poll->Add(func);
+    pool->Add(func);
     func = Test;
-    poll->Add(func);
-    delete poll;
+    pool->Add(func);
+    delete pool;
     return 0;
 }
