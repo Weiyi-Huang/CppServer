@@ -1,8 +1,11 @@
 #include "Channel.h"
 #include "EventLoop.h"
+#include "Socket.h"
 #include <unistd.h>
+#include <sys/epoll.h>
 
-Channel::Channel(EventLoop *loop, int fd) : m_loop(loop), m_fd(fd), m_events(0), m_revents(0), m_inEpoll(false)
+Channel::Channel(EventLoop *loop, int fd) : m_loop(loop), m_fd(fd), m_events(0), m_ready(0),
+                                            m_inEpoll(false), m_useThreadPool(true)
 {
 }
 
@@ -17,12 +20,31 @@ Channel::~Channel()
 
 void Channel::HandEvent()
 {
-    m_loop->AddThread(m_callback);
+    if (m_ready & (EPOLLIN | EPOLLPRI))
+    {
+        if (m_useThreadPool)
+            m_loop->AddThread(m_readCallback);
+        else
+            m_readCallback();
+    }
+    if (m_ready & (EPOLLOUT))
+    {
+        if (m_useThreadPool)
+            m_loop->AddThread(m_writeCallback);
+        else
+            m_writeCallback();
+    }
 }
 
-void Channel::EnableReading()
+void Channel::EnableRead()
 {
-    m_events = EPOLLIN | EPOLLET;
+    m_events = EPOLLIN | EPOLLPRI;
+    m_loop->UpdateChannel(this);
+}
+
+void Channel::UseET()
+{
+    m_events |= EPOLLET;
     m_loop->UpdateChannel(this);
 }
 
@@ -36,9 +58,9 @@ uint32_t Channel::GetEvents()
     return m_events;
 }
 
-uint32_t Channel::GetRevents()
+uint32_t Channel::GetReady()
 {
-    return m_revents;
+    return m_ready;
 }
 
 bool Channel::GetInEpoll()
@@ -46,17 +68,22 @@ bool Channel::GetInEpoll()
     return m_inEpoll;
 }
 
-void Channel::SetInEpoll()
+void Channel::SetInEpoll(bool in)
 {
-    m_inEpoll = true;
+    m_inEpoll = in;
 }
 
-void Channel::SetRevents(uint32_t ev)
+void Channel::SetReady(uint32_t ev)
 {
-    m_revents = ev;
+    m_ready = ev;
 }
 
-void Channel::SetCallback(std::function<void()> cb)
+void Channel::SetReadCallback(std::function<void()> cb)
 {
-    m_callback = cb;
+    m_readCallback = cb;
+}
+
+void Channel::SetUseThreadPool(bool use)
+{
+    m_useThreadPool = use;
 }

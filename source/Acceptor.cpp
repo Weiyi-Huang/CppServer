@@ -10,12 +10,13 @@ Acceptor::Acceptor(EventLoop *loop) : m_loop(loop), m_sock(nullptr), m_acceptCha
     InetAddress *addr = new InetAddress("127.0.0.1", 1234);
     m_sock->Bind(addr);
     m_sock->Listen();
-    m_sock->SetNonBlocking();
+    //m_sock->SetNonBlocking();
 
     m_acceptChannel = new Channel(m_loop, m_sock->GetFd());
     std::function<void()> cb = std::bind(&Acceptor::AcceptConnection, this);
-    m_acceptChannel->SetCallback(cb);
-    m_acceptChannel->EnableReading();
+    m_acceptChannel->SetReadCallback(cb);
+    m_acceptChannel->EnableRead();
+    m_acceptChannel->SetUseThreadPool(false);
 
     delete addr;
 }

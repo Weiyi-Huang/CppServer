@@ -40,3 +40,9 @@ void Buffer::Getline()
     m_buf.clear();
     std::getline(std::cin, m_buf);
 }
+
+void Buffer::SetBuf(const char *buf)
+{
+    m_buf.clear();
+    m_buf.append(buf);
+}

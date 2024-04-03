@@ -6,7 +6,7 @@
 #include <cstdio>
 
 #define MAX_EVENTS 1000
-#define DEBUG
+// #define DEBUG
 
 Epoll::Epoll() : m_epfd(-1), m_events(nullptr)
 {
@@ -25,15 +25,6 @@ Epoll::~Epoll()
     }
     delete[] m_events;
 }
-
-// void Epoll::AddFd(int fd, uint32_t op)
-// {
-//     epoll_event ev;
-//     bzero(&ev, sizeof(ev));
-//     ev.data.fd = fd;
-//     ev.events = op;
-//     ErrorIf(epoll_ctl(m_epfd, EPOLL_CTL_ADD, fd, &ev) == -1, "Epoll add event error!");
-// }
 
 void Epoll::UpdateChannel(Channel *channel)
 {
@@ -59,17 +50,12 @@ void Epoll::UpdateChannel(Channel *channel)
     }
 }
 
-// std::vector<epoll_event> Epoll::Poll(int timeout)
-// {
-//     std::vector<epoll_event> activeEvents;
-//     int nfds = epoll_wait(m_epfd, m_events, MAX_EVENTS, timeout);
-//     ErrorIf(nfds == -1, "Epoll wait error!");
-//     for (int i = 0; i < nfds; ++i)
-//     {
-//         activeEvents.push_back(m_events[i]);
-//     }
-//     return activeEvents;
-// }
+void Epoll::DeleteChannel(Channel *channel)
+{
+    int fd = channel->GetFd();
+    ErrorIf(epoll_ctl(m_epfd, EPOLL_CTL_DEL, fd, NULL) == -1, "Epoll delete error!");
+    channel->SetInEpoll(false);
+}
 
 std::vector<Channel*> Epoll::Poll(int timeout)
 {
@@ -79,7 +65,7 @@ std::vector<Channel*> Epoll::Poll(int timeout)
     for (int i = 0; i < nfds; ++i)
     {
         Channel *ch = (Channel*)m_events[i].data.ptr;
-        ch->SetRevents(m_events[i].events);
+        ch->SetReady(m_events[i].events);
         activeChannels.push_back(ch);
     }
     return activeChannels;

@@ -29,9 +29,7 @@ Socket::~Socket()
 void Socket::Bind(InetAddress *addr)
 {
     sockaddr_in addr_in = addr->GetAddr();
-    socklen_t addr_len = addr->GetAddrLen();
-    ErrorIf(::bind(m_fd, (sockaddr*)&addr_in, addr_len) == -1, "Socket bind error!");
-    addr->SetInetAddr(addr_in, addr_len);
+    ErrorIf(::bind(m_fd, (sockaddr*)&addr_in, sizeof(addr_in)) == -1, "Socket bind error!");
 }
 
 void Socket::Listen()
@@ -47,8 +45,7 @@ void Socket::SetNonBlocking()
 void Socket::Connect(InetAddress *addr)
 {
     sockaddr_in addr_in = addr->GetAddr();
-    socklen_t addr_len = addr->GetAddrLen();
-    ErrorIf(::connect(m_fd, (sockaddr*)&addr_in, addr_len) == -1, "Socket connect error!");
+    ErrorIf(::connect(m_fd, (sockaddr*)&addr_in, sizeof(addr_in)) == -1, "Socket connect error!");
 }
 
 int Socket::Accept(InetAddress *addr)
@@ -58,7 +55,7 @@ int Socket::Accept(InetAddress *addr)
     bzero(&addr_in, sizeof(addr_in));
     int clnt_sockfd = ::accept(m_fd, (sockaddr*)&addr_in, &addr_len);
     ErrorIf(clnt_sockfd == -1, "Socket accept error!");
-    addr->SetInetAddr(addr_in, addr_len);
+    addr->SetInetAddr(addr_in);
     return clnt_sockfd;
 }
 

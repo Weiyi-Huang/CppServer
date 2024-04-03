@@ -12,7 +12,7 @@ public:
     ~Server();
 
     void NewConnection(Socket *sock);
-    void DeleteConnection(Socket *sock);
+    void DeleteConnection(int sockfd);
 
 private:
     EventLoop *m_loop;

@@ -37,14 +37,3 @@ ThreadPool::~ThreadPool()
             th.join();
     }
 }
-
-void ThreadPool::Add(std::function<void()> func)
-{
-    {
-        std::unique_lock<std::mutex> lock(m_taskmtx);
-        if (m_stop)
-            throw std::runtime_error("ThreadPool already stop, can't add task any more!");
-        m_tasks.emplace(func);
-    }
-    m_cv.notify_one();
-}
