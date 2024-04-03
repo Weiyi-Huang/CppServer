@@ -7,15 +7,13 @@
 #include <cstring>
 #include <iostream>
 
-Connection::Connection(EventLoop *loop, Socket *sock) : m_loop(loop), m_sock(sock), m_channel(nullptr),
-                                                        m_inBuffer(new std::string()), m_readBuffer(nullptr)
+Connection::Connection(EventLoop *loop, Socket *sock) : m_loop(loop), m_sock(sock), m_channel(nullptr), m_readBuffer(nullptr)
 {
     m_channel = new Channel(m_loop, m_sock->GetFd());
     m_channel->EnableRead();
     m_channel->UseET();
     std::function<void()> cb = std::bind(&Connection::Echo, this, m_sock->GetFd());
     m_channel->SetReadCallback(cb);
-    m_channel->SetUseThreadPool(true);
 
     m_readBuffer = new Buffer();
 }
@@ -68,11 +66,6 @@ void Connection::Echo(int sockfd)
     }
 }
 
-void Connection::SetDeleteConnectionCallBack(std::function<void(int)> cb)
-{
-    m_deleteConnectionCallback = cb;
-}
-
 void Connection::Send(int sockfd)
 {
     char buf[m_readBuffer->Size()];
@@ -88,4 +81,9 @@ void Connection::Send(int sockfd)
         }
         data_left -= bytes_write;
     }
+}
+
+void Connection::SetDeleteConnectionCallBack(std::function<void(int)> cb)
+{
+    m_deleteConnectionCallback = cb;
 }

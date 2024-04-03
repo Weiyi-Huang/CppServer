@@ -5,7 +5,7 @@
 #include <sys/epoll.h>
 
 Channel::Channel(EventLoop *loop, int fd) : m_loop(loop), m_fd(fd), m_events(0), m_ready(0),
-                                            m_inEpoll(false), m_useThreadPool(true)
+                                            m_inEpoll(false)
 {
 }
 
@@ -22,17 +22,11 @@ void Channel::HandEvent()
 {
     if (m_ready & (EPOLLIN | EPOLLPRI))
     {
-        if (m_useThreadPool)
-            m_loop->AddThread(m_readCallback);
-        else
-            m_readCallback();
+        m_readCallback();
     }
     if (m_ready & (EPOLLOUT))
     {
-        if (m_useThreadPool)
-            m_loop->AddThread(m_writeCallback);
-        else
-            m_writeCallback();
+        m_writeCallback();
     }
 }
 
@@ -81,9 +75,4 @@ void Channel::SetReady(uint32_t ev)
 void Channel::SetReadCallback(std::function<void()> cb)
 {
     m_readCallback = cb;
-}
-
-void Channel::SetUseThreadPool(bool use)
-{
-    m_useThreadPool = use;
 }

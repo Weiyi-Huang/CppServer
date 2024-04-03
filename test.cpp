@@ -4,7 +4,6 @@
 #include <functional>
 #include "source/util.h"
 #include "source/Buffer.h"
-#include "source/InetAddress.h"
 #include "source/Socket.h"
 #include "source/ThreadPool.h"
 using namespace std;

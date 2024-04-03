@@ -4,7 +4,6 @@
 #include "source/util.h"
 #include "source/Buffer.h"
 #include "source/Socket.h"
-#include "source/InetAddress.h"
 
 int main()
 {

@@ -1,10 +1,48 @@
 #include "Socket.h"
-#include "InetAddress.h"
 #include "util.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <cstring>
+#include <cstdio>
+#include <errno.h>
+
+InetAddress::InetAddress()
+{
+    bzero(&m_addr_in, sizeof(m_addr_in));
+}
+
+InetAddress::InetAddress(const char *ip, uint16_t port)
+{
+    bzero(&m_addr_in, sizeof(m_addr_in));
+    m_addr_in.sin_family = AF_INET;
+    m_addr_in.sin_addr.s_addr = inet_addr(ip);
+    m_addr_in.sin_port = htons(port);
+}
+
+InetAddress::~InetAddress()
+{
+}
+
+void InetAddress::SetInetAddr(sockaddr_in addr_in)
+{
+    m_addr_in = addr_in;
+}
+
+sockaddr_in InetAddress::GetAddr()
+{
+    return m_addr_in;
+}
+
+char *InetAddress::GetIp()
+{
+    return inet_ntoa(m_addr_in.sin_addr);
+}
+
+uint16_t InetAddress::GetPort()
+{
+    return ntohs(m_addr_in.sin_port);
+}
 
 Socket::Socket() : m_fd(-1)
 {
@@ -29,7 +67,7 @@ Socket::~Socket()
 void Socket::Bind(InetAddress *addr)
 {
     sockaddr_in addr_in = addr->GetAddr();
-    ErrorIf(::bind(m_fd, (sockaddr*)&addr_in, sizeof(addr_in)) == -1, "Socket bind error!");
+    ErrorIf(::bind(m_fd, (sockaddr *)&addr_in, sizeof(addr_in)) == -1, "Socket bind error!");
 }
 
 void Socket::Listen()
@@ -45,16 +83,62 @@ void Socket::SetNonBlocking()
 void Socket::Connect(InetAddress *addr)
 {
     sockaddr_in addr_in = addr->GetAddr();
-    ErrorIf(::connect(m_fd, (sockaddr*)&addr_in, sizeof(addr_in)) == -1, "Socket connect error!");
+    if (fcntl(m_fd, F_GETFL) && O_NONBLOCK)
+    {
+        while (true)
+        {
+            int ret = ::connect(m_fd, (sockaddr *)&addr_in, sizeof(addr_in));
+            if (ret == 0)
+            {
+                break;
+            }
+            else if (ret == -1 && (errno == EINPROGRESS))
+            {
+                continue;
+            }
+            else if (ret == -1)
+            {
+                ErrorIf(true, "Socket connect error!");
+            }
+        }
+    }
+    else
+    {
+        ErrorIf(::connect(m_fd, (sockaddr *)&addr_in, sizeof(addr_in)) == -1, "Socket connect error!");
+    }
 }
 
 int Socket::Accept(InetAddress *addr)
 {
+    int clnt_sockfd = -1;
     sockaddr_in addr_in;
     socklen_t addr_len = sizeof(addr_in);
     bzero(&addr_in, sizeof(addr_in));
-    int clnt_sockfd = ::accept(m_fd, (sockaddr*)&addr_in, &addr_len);
-    ErrorIf(clnt_sockfd == -1, "Socket accept error!");
+    if (fcntl(m_fd, F_GETFL) && O_NONBLOCK)
+    {
+        while (true)
+        {
+            clnt_sockfd = ::accept(m_fd, (sockaddr *)&addr_in, &addr_len);
+            if (clnt_sockfd == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK)))
+            {
+                printf("No connection yet\n");
+                continue;
+            }
+            else if (clnt_sockfd == -1)
+            {
+                ErrorIf(true, "Socket accept error!");
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        clnt_sockfd = ::accept(m_fd, (sockaddr *)&addr_in, &addr_len);
+        ErrorIf(clnt_sockfd == -1, "Socket accept error!");
+    }
     addr->SetInetAddr(addr_in);
     return clnt_sockfd;
 }

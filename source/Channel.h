@@ -21,7 +21,6 @@ public:
 
     void SetReady(uint32_t ev);
     void SetReadCallback(std::function<void()> cb);
-    void SetUseThreadPool(bool use = true);
 
 private:
     EventLoop *m_loop;
@@ -29,7 +28,6 @@ private:
     uint32_t m_events;
     uint32_t m_ready;
     bool m_inEpoll;
-    bool m_useThreadPool;
     std::function<void()> m_readCallback;
     std::function<void()> m_writeCallback;
 };
