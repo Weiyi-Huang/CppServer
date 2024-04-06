@@ -46,10 +46,11 @@ void Socket::Bind(InetAddress *addr) {
 void Socket::Listen() { ErrorIf(::listen(fd_, SOMAXCONN) == -1, "Socket listen error"); }
 
 int Socket::Accept(InetAddress *addr) {
+  // for server socket
   int clnt_sockfd = -1;
   sockaddr_in temp_addr{};
   socklen_t addr_len = sizeof(temp_addr);
-  if (fcntl(fd_, F_GETFL) & O_NONBLOCK) {
+  if (IsNonBlocking()) {
     while (true) {
       clnt_sockfd = ::accept(fd_, (sockaddr *)&temp_addr, &addr_len);
       if (clnt_sockfd == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
@@ -71,8 +72,9 @@ int Socket::Accept(InetAddress *addr) {
 }
 
 void Socket::Connect(InetAddress *addr) {
+  // for client socket
   sockaddr_in temp_addr = addr->GetAddr();
-  if (fcntl(fd_, F_GETFL) & O_NONBLOCK) {
+  if (IsNonBlocking()) {
     while (true) {
       int ret = ::connect(fd_, (sockaddr *)&temp_addr, sizeof(temp_addr));
       if (ret == 0) {
@@ -90,6 +92,14 @@ void Socket::Connect(InetAddress *addr) {
   }
 }
 
+void Socket::Connect(const char *ip, uint16_t port) {
+  InetAddress *addr = new InetAddress(ip, port);
+  Connect(addr);
+  delete addr;
+}
+
 void Socket::SetNonBlocking() { fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL) | O_NONBLOCK); }
+
+bool Socket::IsNonBlocking() { return (fcntl(fd_, F_GETFL) & O_NONBLOCK) != 0; }
 
 int Socket::GetFd() { return fd_; }

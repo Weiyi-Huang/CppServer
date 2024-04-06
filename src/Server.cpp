@@ -1,6 +1,5 @@
 #include "Server.h"
 #include <unistd.h>
-#include <functional>
 #include "Acceptor.h"
 #include "Connection.h"
 #include "EventLoop.h"
@@ -34,16 +33,21 @@ void Server::NewConnection(Socket *sock) {
   ErrorIf(sock->GetFd() == -1, "New connection error");
   uint64_t random = sock->GetFd() % sub_reactors_.size();
   Connection *conn = new Connection(sub_reactors_[random], sock);
-  std::function<void(int)> cb = std::bind(&Server::DeleteConnection, this, std::placeholders::_1);
+  std::function<void(Socket *)> cb = std::bind(&Server::DeleteConnection, this, std::placeholders::_1);
   conn->SetDeleteConnectionCallBack(cb);
+  conn->SetOnConnectCallBack(on_connect_callback_);
   connections_[sock->GetFd()] = conn;
 }
 
-void Server::DeleteConnection(int sockfd) {
+void Server::DeleteConnection(Socket *sock) {
+  int sockfd = sock->GetFd();
   auto it = connections_.find(sockfd);
   if (it != connections_.end()) {
     Connection *conn = connections_[sockfd];
     connections_.erase(sockfd);
     delete conn;
+    conn = nullptr;
   }
 }
+
+void Server::OnConnect(std::function<void(Connection *)> fn) { on_connect_callback_ = std::move(fn); }

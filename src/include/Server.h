@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <map>
 #include <vector>
 #include "Macros.h"
@@ -16,7 +17,8 @@ class Server {
   DISALLOW_COPY_AND_MOVE(Server)
 
   void NewConnection(Socket *sock);
-  void DeleteConnection(int sockfd);
+  void DeleteConnection(Socket *sock);
+  void OnConnect(std::function<void(Connection *)> fn);
 
  private:
   EventLoop *main_reactor_;
@@ -24,4 +26,5 @@ class Server {
   std::map<int, Connection *> connections_;
   std::vector<EventLoop *> sub_reactors_;
   ThreadPool *thread_pool_;
+  std::function<void(Connection *)> on_connect_callback_;
 };
